@@ -90,7 +90,7 @@ export default class JsonBinProvider extends StorageInterface {
     return json.record;
   }
 
-  async create({ nombre, isPublic = true }) {
+  async create({ nombre, isPublic = false }) {
     const now = new Date().toISOString();
     const newLista = {
       id: crypto.randomUUID(),
