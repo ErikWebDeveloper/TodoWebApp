@@ -1,88 +1,174 @@
 import StorageInterface from "./storageInterface";
 
 const API_URL = "https://api.jsonbin.io/v3/b";
-
-// Pon aquí tu X-Master-Key de JSONBin.io
-const HEADERS = {
+/*const API_KEY = "$2a$10$hAGCr16qEZBEkDLp4p2bH.ZigIOasyNlEcQ8wVz079eTJ3NQCowy2";
+const INDEX_BIN = ""
+const this.HEADERS = {
   "Content-Type": "application/json",
-  "X-Master-Key": "TU_API_KEY_AQUI",
-};
+  "X-Master-Key": API_KEY,
+};*/
 
 export default class JsonBinProvider extends StorageInterface {
-  constructor(binId = null) {
+  constructor(apiKey) {
     super();
-    // Si no se pasa binId, intentamos cargarlo desde localStorage
-    this.binId = binId || localStorage.getItem("binId");
+    this.apiKey = apiKey;
+    this.bins = JSON.parse(localStorage.getItem("userBins") || "{}");
+
+    this.HEADERS = {
+      "Content-Type": "application/json",
+      "X-Master-Key": this.apiKey,
+    };
+
+    // Si está vacío, intenta reconstruirlo desde el backend
+    if (Object.keys(this.bins).length === 0) {
+      //this.initialize();
+    }
+  }
+
+  async initialize() {
+    try {
+      const res = await fetch(`${API_URL}`, {
+        headers: this.HEADERS,
+      });
+
+      if (!res.ok) throw new Error("No se pudieron listar los bins");
+
+      const json = await res.json();
+
+      // Esto contiene todos los bins disponibles
+      const binList = json.records;
+
+      const newMap = {};
+
+      for (const bin of binList) {
+        const binId = bin.metadata.id;
+
+        const binRes = await fetch(`${API_URL}/${binId}/latest`, {
+          headers: this.HEADERS,
+        });
+
+        if (!binRes.ok) continue;
+
+        const binData = await binRes.json();
+        const internalId = binData.record?.id;
+
+        if (internalId) {
+          newMap[internalId] = binId;
+        }
+      }
+
+      this.bins = newMap;
+      this._saveLocal();
+    } catch (err) {
+      console.error("Error inicializando bins desde JSONBin:", err);
+    }
+  }
+
+  _saveLocal() {
+    localStorage.setItem("userBins", JSON.stringify(this.bins));
   }
 
   async getAll() {
-    if (!this.binId) return [];
-    const res = await fetch(`${API_URL}/${this.binId}/latest`, {
-      headers: HEADERS,
+    const result = [];
+    for (const id in this.bins) {
+      const lista = await this.get(id);
+      if (lista) result.push(lista);
+    }
+    return result;
+  }
+
+  async get(id) {
+    const binId = this.bins[id];
+    if (!binId) return null;
+
+    const res = await fetch(`${API_URL}/${binId}/latest`, {
+      headers: this.HEADERS,
     });
-    console.log(res)
-    if (!res.ok) throw new Error("No se pudo obtener la lista");
+    if (!res.ok) return null;
+
     const json = await res.json();
     return json.record;
   }
 
-  async get(id) {
-    const listas = await this.getAll();
-    return listas.find((l) => l.id === id);
-  }
-
-  async create(data) {
-    const listas = await this.getAll();
+  async create({ nombre, isPublic = true }) {
     const now = new Date().toISOString();
     const newLista = {
-      ...data,
       id: crypto.randomUUID(),
+      nombre,
       createdAt: now,
       updatedAt: now,
       items: [],
     };
-    listas.push(newLista);
-    await this._save(listas);
+
+    const headers = {
+      ...this.HEADERS,
+      ...(isPublic ? { "X-Bin-Private": "false" } : {}),
+      "X-Bin-Name": nombre,
+    };
+
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(newLista),
+    });
+
+    if (!res.ok) throw new Error("No se pudo crear el bin");
+
+    const json = await res.json();
+    const binId = json.metadata.id;
+
+    this.bins[newLista.id] = binId;
+    this._saveLocal();
+
     return newLista;
   }
 
   async update(id, newData) {
-    const listas = await this.getAll();
-    const index = listas.findIndex((l) => l.id === id);
-    if (index === -1) return null;
-    listas[index] = {
-      ...listas[index],
+    const lista = await this.get(id);
+    if (!lista) return null;
+
+    const updatedLista = {
+      ...lista,
       ...newData,
       updatedAt: new Date().toISOString(),
     };
-    await this._save(listas);
-    return listas[index];
+
+    await this._saveBin(id, updatedLista);
+    return updatedLista;
   }
 
   async delete(id) {
-    const listas = await this.getAll();
-    const nuevasListas = listas.filter((l) => l.id !== id);
-    await this._save(nuevasListas);
+    const binId = this.bins[id];
+    if (!binId) return;
+
+    const res = await fetch(`${API_URL}/${binId}`, {
+      method: "DELETE",
+      headers: this.HEADERS,
+    });
+
+    if (!res.ok) throw new Error("No se pudo eliminar el bin");
+
+    delete this.bins[id];
+    this._saveLocal();
   }
 
   async addItem(listaId, contenido) {
-    const listas = await this.getAll();
-    const now = new Date().toISOString();
-    const index = listas.findIndex((l) => l.id === listaId);
-    if (index === -1) return null;
+    const lista = await this.get(listaId);
+    if (!lista) return null;
 
+    const now = new Date().toISOString();
     const newItem = {
       id: crypto.randomUUID(),
       contenido,
-      orden: listas[index].items?.length || 0,
+      orden: lista.items?.length || 0,
       createdAt: now,
       updatedAt: now,
     };
 
-    listas[index].items = [...(listas[index].items || []), newItem];
-    listas[index].updatedAt = now;
+    lista.items.push(newItem);
+    lista.updatedAt = now;
 
-    await this._save(listas);
+    await this._saveBin(listaId, lista);
     return newItem;
   }
 
@@ -93,58 +179,77 @@ export default class JsonBinProvider extends StorageInterface {
     nuevoOrden = null,
     completado = null
   ) {
-    const listas = await this.getAll();
-    const lista = listas.find((l) => l.id === listaId);
+    const lista = await this.get(listaId);
     if (!lista) return null;
 
-    const itemIndex = lista.items.findIndex((i) => i.id === itemId);
-    if (itemIndex === -1) return null;
+    const index = lista.items.findIndex((i) => i.id === itemId);
+    if (index === -1) return null;
 
-    lista.items[itemIndex] = {
-      ...lista.items[itemIndex],
+    lista.items[index] = {
+      ...lista.items[index],
       contenido,
-      orden: nuevoOrden !== null ? nuevoOrden : lista.items[itemIndex].orden,
+      orden: nuevoOrden !== null ? nuevoOrden : lista.items[index].orden,
       updatedAt: new Date().toISOString(),
       ...(completado !== null && { completado }),
     };
 
     lista.updatedAt = new Date().toISOString();
 
-    await this._save(listas);
-    return lista.items[itemIndex];
+    await this._saveBin(listaId, lista);
+    return lista.items[index];
+  }
+
+  async reorderItems(listaId, itemId, direccion) {
+    const lista = await this.get(listaId);
+    if (!lista) return null;
+
+    const items = [...lista.items];
+
+    const index = items.findIndex((i) => i.id === itemId);
+    if (index === -1) return;
+
+    const swapIndex = direccion === "arriba" ? index - 1 : index + 1;
+    if (swapIndex < 0 || swapIndex >= items.length) return;
+
+    // Intercambia las posiciones
+    const temp = items[index];
+    items[index] = items[swapIndex];
+    items[swapIndex] = temp;
+
+    // Reasigna orden según posición
+    const now = new Date().toISOString();
+    items.forEach((item, i) => {
+      item.orden = i;
+      item.updatedAt = now;
+    });
+
+    lista.items = items;
+    lista.updatedAt = now;
+
+    await this._saveBin(listaId, lista);
+    return lista;
   }
 
   async deleteItem(listaId, itemId) {
-    const listas = await this.getAll();
-    const lista = listas.find((l) => l.id === listaId);
+    const lista = await this.get(listaId);
     if (!lista) return;
+
     lista.items = lista.items.filter((i) => i.id !== itemId);
     lista.updatedAt = new Date().toISOString();
-    await this._save(listas);
+
+    await this._saveBin(listaId, lista);
   }
 
-  async _save(data) {
-    if (!this.binId) {
-      // Crear bin nuevo la primera vez
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: HEADERS,
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error("No se pudo crear el bin en JSONBin.io");
-      const json = await res.json();
-      this.binId = json.metadata.id;
-      localStorage.setItem("binId", this.binId);
-      console.log("Nuevo bin creado con ID:", this.binId);
-    } else {
-      // Actualizar bin existente
-      const res = await fetch(`${API_URL}/${this.binId}`, {
-        method: "PUT",
-        headers: HEADERS,
-        body: JSON.stringify(data),
-      });
-      if (!res.ok)
-        throw new Error("No se pudo actualizar el bin en JSONBin.io");
-    }
+  async _saveBin(id, data) {
+    const binId = this.bins[id];
+    if (!binId) throw new Error("Bin no encontrado");
+
+    const res = await fetch(`${API_URL}/${binId}`, {
+      method: "PUT",
+      headers: this.HEADERS,
+      body: JSON.stringify(data),
+    });
+
+    if (!res.ok) throw new Error("No se pudo guardar en el bin");
   }
 }

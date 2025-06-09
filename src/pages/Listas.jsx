@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useLista } from "../context/ListaContext";
-//import { useLista } from "../context/ListaContextGPT";
 import { Link } from "react-router-dom";
 
 export default function ListaHome() {

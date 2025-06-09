@@ -4,11 +4,16 @@ import { useState, useEffect } from "react";
 
 export default function ListaDetalle() {
   const { id } = useParams();
-  const { getLista, updateLista, addItem, deleteItem, updateItem } = useLista();
+  const { getLista, updateLista, addItem, deleteItem, updateItem, reorderItems } = useLista();
   const lista = getLista(id);
   const [contenido, setContenido] = useState("");
   const [nombre, setNombre] = useState(lista?.nombre || "");
   const [mostrarChecks, setMostrarChecks] = useState(false);
+
+  const [editandoNombre, setEditandoNombre] = useState(false);
+  const [editandoItemId, setEditandoItemId] = useState(null);
+  const [nuevoContenido, setNuevoContenido] = useState("");
+
 
   useEffect(() => {
     if (lista?.nombre) {
@@ -28,52 +33,60 @@ export default function ListaDetalle() {
   );
 
   const handleOrdenChange = (itemId, direccion) => {
-    const index = itemsOrdenados.findIndex((i) => i.id === itemId);
-    if (index === -1) return;
-
-    const nuevoOrden = [...itemsOrdenados];
-    const swapIndex = direccion === "arriba" ? index - 1 : index + 1;
-
-    if (swapIndex < 0 || swapIndex >= nuevoOrden.length) return;
-
-    const temp = nuevoOrden[index].orden;
-    nuevoOrden[index].orden = nuevoOrden[swapIndex].orden;
-    nuevoOrden[swapIndex].orden = temp;
-
-    updateItem(
-      id,
-      nuevoOrden[index].id,
-      nuevoOrden[index].contenido,
-      nuevoOrden[index].orden
-    );
-    updateItem(
-      id,
-      nuevoOrden[swapIndex].id,
-      nuevoOrden[swapIndex].contenido,
-      nuevoOrden[swapIndex].orden
-    );
+    reorderItems(id, itemId, direccion);
   };
 
   return (
     <div className="container py-5">
       <div className="mb-4">
-        <Link to={"/"} className="text-decoration-none fs-5">❮❮ Volver a mis listas</Link>
+        <Link to={"/"} className="text-decoration-none fs-5">
+          ❮❮ Volver a mis listas
+        </Link>
       </div>
       <div className="mb-4 text-center">
         <label htmlFor="nombreLista" className="form-label visually-hidden">
           Nombre de la lista
         </label>
-        <input
-          id="nombreLista"
-          type="text"
-          className="form-control border-0 px-0 fs-1 text-center"
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-          onBlur={() => updateLista(id, nombre)}
-          aria-describedby="nombreListaHelp"
-        />
+
+        {editandoNombre ? (
+          <input
+            id="nombreLista"
+            type="text"
+            className="form-control px-0 fs-1 text-center m-0"
+            style={{ lineHeight: "1", height: "auto" }}
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            onBlur={() => {
+              const nombreLimpio = nombre.trim();
+              if (nombreLimpio === "") {
+                alert("El nombre de la lista no puede estar vacío.");
+                setNombre(lista.nombre); // Restaurar el anterior
+              } else {
+                updateLista(id, nombreLimpio);
+              }
+              setEditandoNombre(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                e.target.blur();
+              }
+            }}
+            autoFocus
+          />
+        ) : (
+          <h1
+            className="fs-1"
+            onDoubleClick={() => setEditandoNombre(true)}
+            style={{ cursor: "pointer" }}
+            title="Doble clic para editar"
+          >
+            {nombre}
+          </h1>
+        )}
+
         <div id="nombreListaHelp" className="form-text">
-          Toca el nombre de la lista para editarlo.
+          Haz doble clic en el título o un ítem para modificarlo.
         </div>
       </div>
 
@@ -94,7 +107,12 @@ export default function ListaDetalle() {
             className="btn btn-success"
             onClick={(e) => {
               e.preventDefault();
-              if (contenido.trim() === "") return;
+              if (contenido.trim() === ""){
+                alert(
+                  "Por favor, escribe un contenido antes de añadir un ítem."
+                );
+                return;
+              };
               addItem(lista.id, contenido);
               setContenido("");
             }}
@@ -128,75 +146,112 @@ export default function ListaDetalle() {
       </div>
 
       <ul className="list-group">
-        {itemsOrdenados.map((item, i) => (
-          <li
-            key={item.id}
-            className={`list-group-item d-flex justify-content-between align-items-center bg-body-tertiary ${
-              item.completado && mostrarChecks
-                ? "text-decoration-line-through opacity-50"
-                : ""
-            }`}
-          >
-            <div className="d-flex align-items-center">
-              {mostrarChecks && (
-                <input
-                  type="checkbox"
-                  className="form-check-input me-2"
-                  checked={item.completado || false}
-                  onChange={() =>
-                    updateItem(
-                      id,
-                      item.id,
-                      item.contenido,
-                      item.orden,
-                      !item.completado
-                    )
-                  }
-                  aria-label={`Marcar ${item.contenido} como ${
-                    item.completado ? "incompleto" : "completado"
-                  }`}
-                />
-              )}
-              <span>{item.contenido}</span>
-            </div>
+        {itemsOrdenados.map((item) => {
+          const estaEditando = editandoItemId === item.id;
 
-            <div
-              className="btn-group btn-group-md"
-              role="group"
-              aria-label={`Controles para ${item.contenido}`}
+          return (
+            <li
+              key={item.id}
+              className={`list-group-item d-flex justify-content-between align-items-center bg-body-tertiary ${
+                item.completado && mostrarChecks
+                  ? "text-decoration-line-through opacity-50"
+                  : ""
+              }`}
             >
-              <button
-                className="btn btn-outline-secondary"
-                onClick={() => handleOrdenChange(item.id, "arriba")}
-                aria-label="Mover hacia arriba"
-              >
-                ⬆️
-              </button>
-              <button
-                className="btn btn-outline-secondary"
-                onClick={() => handleOrdenChange(item.id, "abajo")}
-                aria-label="Mover hacia abajo"
-              >
-                ⬇️
-              </button>
-              <button
-                className="btn btn-outline-danger"
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      "¿Estás seguro de que quieres eliminar este ítem?"
-                    )
-                  ) {
-                    deleteItem(lista.id, item.id);
-                  }
-                }}
-                aria-label="Eliminar ítem"
-              >
-                🗑️
-              </button>
-            </div>
-          </li>
-        ))}
+              <div className="d-flex align-items-center">
+                {mostrarChecks && (
+                  <input
+                    type="checkbox"
+                    className="form-check-input me-2"
+                    checked={item.completado || false}
+                    onChange={() =>
+                      updateItem(
+                        id,
+                        item.id,
+                        item.contenido,
+                        item.orden,
+                        !item.completado
+                      )
+                    }
+                    aria-label={`Marcar ${item.contenido} como ${
+                      item.completado ? "incompleto" : "completado"
+                    }`}
+                  />
+                )}
+
+                {estaEditando ? (
+                  <input
+                    className="form-control me-2"
+                    value={nuevoContenido}
+                    onChange={(e) => setNuevoContenido(e.target.value)}
+                    onBlur={() => {
+                      const contenidoLimpio = nuevoContenido.trim();
+                      if (contenidoLimpio === "") {
+                        alert("El contenido del ítem no puede estar vacío.");
+                      } else {
+                        updateItem(
+                          id,
+                          item.id,
+                          contenidoLimpio,
+                          item.orden,
+                          item.completado
+                        );
+                      }
+                      setEditandoItemId(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.target.blur();
+                      }
+                    }}
+                    autoFocus
+                  />
+                ) : (
+                  <span
+                    className="me-2"
+                    onDoubleClick={() => {
+                      setEditandoItemId(item.id);
+                      setNuevoContenido(item.contenido);
+                    }}
+                    style={{ cursor: "pointer" }}
+                    title="Doble clic para editar"
+                  >
+                    {item.contenido}
+                  </span>
+                )}
+              </div>
+
+              <div className="btn-group btn-group-md" role="group">
+                <button
+                  className="btn btn-outline-secondary"
+                  onClick={() => handleOrdenChange(item.id, "arriba")}
+                >
+                  ⬆️
+                </button>
+                <button
+                  className="btn btn-outline-secondary"
+                  onClick={() => handleOrdenChange(item.id, "abajo")}
+                >
+                  ⬇️
+                </button>
+                <button
+                  className="btn btn-outline-danger"
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        "¿Estás seguro de que quieres eliminar este ítem?"
+                      )
+                    ) {
+                      deleteItem(lista.id, item.id);
+                    }
+                  }}
+                >
+                  🗑️
+                </button>
+              </div>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

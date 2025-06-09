@@ -1,26 +1,55 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import LocalStorageProvider from "../storage/localStorageProvider";
 import JsonBinProvider from "../storage/jsonBinProvider";
+import LocalStorageProvider from "../storage/localStorageProvider";
 
 const ListaContext = createContext();
-const storage = new LocalStorageProvider();
-//const storage = new JsonBinProvider();
+
+function getStoredConfig() {
+  const mode = localStorage.getItem("storageMode") || "local";
+  const apiKey = localStorage.getItem("jsonbinApiKey") || "";
+  return { mode, apiKey };
+}
+
+function createStorage(mode, apiKey) {
+  return mode === "jsonbin"
+    ? new JsonBinProvider(apiKey)
+    : new LocalStorageProvider();
+}
 
 export function ListaProvider({ children }) {
   const [listas, setListas] = useState([]);
+  const [config, setConfig] = useState(getStoredConfig());
+  const [storage, setStorage] = useState(() =>
+    createStorage(config.mode, config.apiKey)
+  );
 
+  // Cargar datos al cambiar de storage
   useEffect(() => {
-    const data = storage.getAll();
-    setListas(data);
-  }, []);
+    (async () => {
+      const data = await storage.getAll();
+      setListas(data || []);
+    })();
+  }, [storage]);
 
-  const createLista = (nombre) => {
-    const nuevaLista = storage.create({ nombre });
+  // Permite cambiar proveedor en caliente
+  const updateStorage = (newMode, newApiKey = "") => {
+    localStorage.setItem("storageMode", newMode);
+    if (newMode === "jsonbin") {
+      localStorage.setItem("jsonbinApiKey", newApiKey);
+    }
+
+    const newStorage = createStorage(newMode, newApiKey);
+    setStorage(newStorage);
+    setConfig({ mode: newMode, apiKey: newApiKey });
+  };
+
+  const createLista = async (nombre) => {
+    const nuevaLista = await storage.create({ nombre });
     setListas((prev) => [...prev, nuevaLista]);
   };
 
-  const updateLista = (id, nombre) => {
-    const listaActualizada = storage.update(id, { nombre });
+  const updateLista = async (id, nombre) => {
+    const listaActualizada = await storage.update(id, { nombre });
     if (listaActualizada) {
       setListas((prev) =>
         prev.map((l) => (l.id === id ? listaActualizada : l))
@@ -28,15 +57,15 @@ export function ListaProvider({ children }) {
     }
   };
 
-  const deleteLista = (id) => {
-    storage.delete(id);
+  const deleteLista = async (id) => {
+    await storage.delete(id);
     setListas((prev) => prev.filter((l) => l.id !== id));
   };
 
   const getLista = (id) => listas.find((l) => l.id === id);
 
-  const addItem = (listaId, contenido) => {
-    const item = storage.addItem(listaId, contenido);
+  const addItem = async (listaId, contenido) => {
+    const item = await storage.addItem(listaId, contenido);
     if (!item) return;
     setListas((prev) =>
       prev.map((l) =>
@@ -51,14 +80,22 @@ export function ListaProvider({ children }) {
     );
   };
 
-  const updateItem = (
+  const reorderItems = async (listaId, itemId, direccion) => {
+    await storage.reorderItems(listaId, itemId, direccion);
+    const listaActualizada = await storage.get(listaId);
+    setListas((prev) =>
+      prev.map((l) => (l.id === listaId ? listaActualizada : l))
+    );
+  };
+
+  const updateItem = async (
     listaId,
     itemId,
     contenido,
     orden = null,
     completado = null
   ) => {
-    const item = storage.updateItem(
+    const item = await storage.updateItem(
       listaId,
       itemId,
       contenido,
@@ -80,8 +117,8 @@ export function ListaProvider({ children }) {
     );
   };
 
-  const deleteItem = (listaId, itemId) => {
-    storage.deleteItem(listaId, itemId);
+  const deleteItem = async (listaId, itemId) => {
+    await storage.deleteItem(listaId, itemId);
     setListas((prev) =>
       prev.map((l) =>
         l.id === listaId
@@ -102,6 +139,9 @@ export function ListaProvider({ children }) {
         addItem,
         updateItem,
         deleteItem,
+        reorderItems,
+        config,
+        updateStorage,
       }}
     >
       {children}

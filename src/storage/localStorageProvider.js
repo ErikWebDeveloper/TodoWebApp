@@ -97,4 +97,34 @@ export default class LocalStorageProvider extends StorageInterface {
     lista.updatedAt = new Date().toISOString();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(listas));
   }
+
+  reorderItems(listaId, itemId, direccion) {
+    const listas = this.getAll();
+    const lista = listas.find((l) => l.id === listaId);
+    if (!lista || !Array.isArray(lista.items)) return null;
+
+    const index = lista.items.findIndex((i) => i.id === itemId);
+    if (index === -1) return null;
+
+    const targetIndex = direccion === "arriba" ? index - 1 : index + 1;
+
+    // Asegurarse de que el nuevo índice esté dentro de los límites
+    if (targetIndex < 0 || targetIndex >= lista.items.length) return null;
+
+    // Intercambiar los ítems
+    const items = [...lista.items];
+    [items[index], items[targetIndex]] = [items[targetIndex], items[index]];
+
+    // Actualizar los valores de orden según la nueva posición
+    const now = new Date().toISOString();
+    lista.items = items.map((item, i) => ({
+      ...item,
+      orden: i,
+      updatedAt: now,
+    }));
+
+    lista.updatedAt = now;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(listas));
+    return lista.items;
+  }
 }
