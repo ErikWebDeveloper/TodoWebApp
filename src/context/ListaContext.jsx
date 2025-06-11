@@ -44,11 +44,13 @@ export function ListaProvider({ children }) {
   };
 
   const createLista = async (nombre) => {
+    if (nombre.trim() === "") return;
     const nuevaLista = await storage.create({ nombre });
     setListas((prev) => [...prev, nuevaLista]);
   };
 
   const updateLista = async (id, nombre) => {
+    if (nombre.trim() === "") return;
     const listaActualizada = await storage.update(id, { nombre });
     if (listaActualizada) {
       setListas((prev) =>

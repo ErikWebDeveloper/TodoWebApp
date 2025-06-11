@@ -19,7 +19,7 @@ export default function MainLayout() {
   return (
     <div className="d-flex flex-column min-vh-100">
       <header>
-        <nav className="navbar navbar-expand-md navbar-dark bg-dark shadow-sm">
+        <nav className="navbar navbar-expand-md navbar bg-dark shadow-sm bg-body-tertiary">
           <div className="container">
             {/* Logo */}
             <Link
@@ -29,7 +29,7 @@ export default function MainLayout() {
               <span className="bg-success text-white fw-bold rounded px-2 py-1 shadow-sm">
                 ✅ ToDo
               </span>
-              <span className="text-light fw-light">Web App</span>
+              <span className="fw-light">Web App</span>
             </Link>
 
             {/* Botón de colapso */}
@@ -52,11 +52,6 @@ export default function MainLayout() {
               ref={navbarCollapseRef}
             >
               <ul className="navbar-nav ms-auto">
-                <li className="nav-item">
-                  <NavLink to="/" end className="nav-link">
-                    Inicio
-                  </NavLink>
-                </li>
                 <li className="nav-item">
                   <NavLink to="/settings" className="nav-link">
                     Configuración

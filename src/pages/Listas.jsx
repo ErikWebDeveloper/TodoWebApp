@@ -1,10 +1,19 @@
 import { useState } from "react";
 import { useLista } from "../context/ListaContext";
 import { Link } from "react-router-dom";
+import { useNotification } from "../context/NotificationContext";
 
 export default function ListaHome() {
   const { listas, createLista, deleteLista } = useLista();
   const [nombre, setNombre] = useState("");
+  const { notifySuccess, notifyError, notifyInfo } = useNotification();
+
+  const handleClick = () => {
+    notifySuccess("¡Guardado con éxito!");
+    notifyError("Ocurrió un error");
+    notifyInfo("Esta es una información importante");
+  };
+
   return (
     <div className="container py-5">
       <h1 className="mb-4 text-center">🗒️ Mis Listas</h1>
@@ -23,7 +32,12 @@ export default function ListaHome() {
               className="btn btn-primary"
               onClick={(e) => {
                 e.preventDefault();
-                if (nombre.trim() === "") return;
+                if (nombre.trim() === "") {
+                  notifyError(
+                    "El nombre de la lista no puede estar en blanco."
+                  );
+                  return;
+                }
                 createLista(nombre);
                 setNombre("");
               }}
