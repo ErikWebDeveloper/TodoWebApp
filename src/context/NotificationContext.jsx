@@ -19,7 +19,7 @@ export function NotificationProvider({ children }) {
   const value = {
     notifySuccess: (msg) => addNotification("success", msg),
     notifyError: (msg) => addNotification("danger", msg),
-    notifyInfo: (msg) => addNotification("info", msg),
+    notifyInfo: (msg) => addNotification("primary", msg),
   };
 
   return (

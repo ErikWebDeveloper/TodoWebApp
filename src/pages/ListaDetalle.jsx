@@ -1,19 +1,28 @@
 import { Link, useParams } from "react-router-dom";
 import { useLista } from "../context/ListaContext";
 import { useState, useEffect } from "react";
+import { useNotification } from "../context/NotificationContext";
+import { useDialog } from "../context/DialogContext";
 
 export default function ListaDetalle() {
+  const { notifySuccess, notifyError, notifyInfo } = useNotification();
+  const { confirm } = useDialog();
   const { id } = useParams();
-  const { getLista, updateLista, addItem, deleteItem, updateItem, reorderItems } = useLista();
+  const {
+    getLista,
+    updateLista,
+    addItem,
+    deleteItem,
+    updateItem,
+    reorderItems,
+  } = useLista();
   const lista = getLista(id);
   const [contenido, setContenido] = useState("");
   const [nombre, setNombre] = useState(lista?.nombre || "");
   const [mostrarChecks, setMostrarChecks] = useState(false);
-
   const [editandoNombre, setEditandoNombre] = useState(false);
   const [editandoItemId, setEditandoItemId] = useState(null);
   const [nuevoContenido, setNuevoContenido] = useState("");
-
 
   useEffect(() => {
     if (lista?.nombre) {
@@ -36,11 +45,58 @@ export default function ListaDetalle() {
     reorderItems(id, itemId, direccion);
   };
 
+  const handleEditTitle = () => {
+    const nombreLimpio = nombre.trim();
+    if (nombreLimpio === "") {
+      //alert("El nombre de la lista no puede estar vacío.");
+      setNombre(lista.nombre); // Restaurar el anterior
+      notifyError("El nombre de la lista no puede estar vacío.");
+    } else {
+      updateLista(id, nombreLimpio);
+      notifySuccess("Nombre de la lista actualizado correctamente");
+    }
+    setEditandoNombre(false);
+  };
+
+  const handleEditItem = (item) => {
+    const contenidoLimpio = nuevoContenido.trim();
+    if (contenidoLimpio === "") {
+      //alert("El contenido del ítem no puede estar vacío.");
+      notifyError("El contenido del ítem no puede estar vacío.");
+    } else {
+      updateItem(id, item.id, contenidoLimpio, item.orden, item.completado);
+    }
+    setEditandoItemId(null);
+  };
+
+  const handleInsertItem = (e) => {
+    e.preventDefault();
+    if (contenido.trim() === "") {
+      notifyError("Por favor, escribe un contenido antes de añadir un ítem.");
+      return;
+    }
+    addItem(lista.id, contenido);
+    setContenido("");
+    notifySuccess("Item añadido a la lista")
+  };
+
+  const handleDelete = async (item) => {
+    const ok = await confirm({
+      title: "Eliminar item",
+      message: "¿Estás seguro de que quieres eliminar este ítem?",
+    });
+
+    if (ok) {
+      deleteItem(lista.id, item.id);
+      notifyInfo(`Se ha eliminado el item de la lista.`);
+    }
+  };
+
   return (
-    <div className="container py-5">
+    <div className="container pb-5">
       <div className="mb-4">
         <Link to={"/"} className="text-decoration-none fs-5">
-          ❮❮ Volver a mis listas
+          ❮❮ Atras
         </Link>
       </div>
       <div className="mb-4 text-center">
@@ -57,14 +113,7 @@ export default function ListaDetalle() {
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             onBlur={() => {
-              const nombreLimpio = nombre.trim();
-              if (nombreLimpio === "") {
-                alert("El nombre de la lista no puede estar vacío.");
-                setNombre(lista.nombre); // Restaurar el anterior
-              } else {
-                updateLista(id, nombreLimpio);
-              }
-              setEditandoNombre(false);
+              handleEditTitle();
             }}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
@@ -106,15 +155,7 @@ export default function ListaDetalle() {
           <button
             className="btn btn-success"
             onClick={(e) => {
-              e.preventDefault();
-              if (contenido.trim() === ""){
-                alert(
-                  "Por favor, escribe un contenido antes de añadir un ítem."
-                );
-                return;
-              };
-              addItem(lista.id, contenido);
-              setContenido("");
+              handleInsertItem(e);
             }}
           >
             Añadir
@@ -185,19 +226,7 @@ export default function ListaDetalle() {
                     value={nuevoContenido}
                     onChange={(e) => setNuevoContenido(e.target.value)}
                     onBlur={() => {
-                      const contenidoLimpio = nuevoContenido.trim();
-                      if (contenidoLimpio === "") {
-                        alert("El contenido del ítem no puede estar vacío.");
-                      } else {
-                        updateItem(
-                          id,
-                          item.id,
-                          contenidoLimpio,
-                          item.orden,
-                          item.completado
-                        );
-                      }
-                      setEditandoItemId(null);
+                      handleEditItem(item);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
@@ -237,13 +266,7 @@ export default function ListaDetalle() {
                 <button
                   className="btn btn-outline-danger"
                   onClick={() => {
-                    if (
-                      window.confirm(
-                        "¿Estás seguro de que quieres eliminar este ítem?"
-                      )
-                    ) {
-                      deleteItem(lista.id, item.id);
-                    }
+                    handleDelete(item);
                   }}
                 >
                   🗑️

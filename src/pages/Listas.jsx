@@ -2,16 +2,24 @@ import { useState } from "react";
 import { useLista } from "../context/ListaContext";
 import { Link } from "react-router-dom";
 import { useNotification } from "../context/NotificationContext";
+import { useDialog } from "../context/DialogContext";
 
 export default function ListaHome() {
   const { listas, createLista, deleteLista } = useLista();
   const [nombre, setNombre] = useState("");
   const { notifySuccess, notifyError, notifyInfo } = useNotification();
+  const { confirm } = useDialog();
 
-  const handleClick = () => {
-    notifySuccess("¡Guardado con éxito!");
-    notifyError("Ocurrió un error");
-    notifyInfo("Esta es una información importante");
+  const handleDelete = async (lista) => {
+    const ok = await confirm({
+      title: "Eliminar lista",
+      message: "¿Estás seguro de que quieres eliminar esta lista?",
+    });
+
+    if (ok) {
+      deleteLista(lista.id);
+      notifyInfo(`Se ha eliminado la lista: ${lista.nombre}.`)
+    }
   };
 
   return (
@@ -40,6 +48,7 @@ export default function ListaHome() {
                 }
                 createLista(nombre);
                 setNombre("");
+                notifySuccess("Lista creada con éxito!")
               }}
             >
               Crear
@@ -67,13 +76,7 @@ export default function ListaHome() {
                   <button
                     className="btn btn-sm btn-danger"
                     onClick={() => {
-                      if (
-                        window.confirm(
-                          "¿Estás seguro de que quieres eliminar esta lista?"
-                        )
-                      ) {
-                        deleteLista(lista.id);
-                      }
+                      handleDelete(lista);
                     }}
                   >
                     🗑️
