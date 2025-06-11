@@ -1,12 +1,7 @@
 import StorageInterface from "./storageInterface";
 
 const API_URL = "https://api.jsonbin.io/v3/b";
-/*const API_KEY = "$2a$10$hAGCr16qEZBEkDLp4p2bH.ZigIOasyNlEcQ8wVz079eTJ3NQCowy2";
-const INDEX_BIN = ""
-const this.HEADERS = {
-  "Content-Type": "application/json",
-  "X-Master-Key": API_KEY,
-};*/
+
 
 export default class JsonBinProvider extends StorageInterface {
   constructor(apiKey) {

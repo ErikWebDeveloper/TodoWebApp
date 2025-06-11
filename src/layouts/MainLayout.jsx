@@ -1,8 +1,11 @@
 import { Outlet, Link, NavLink, useLocation } from "react-router-dom";
 import { useLista } from "../context/ListaContext";
 import { useEffect, useRef } from "react";
+import { useTheme } from "../context/ThemeContext";
+import "bootstrap-icons/font/bootstrap-icons.css";
 
 export default function MainLayout() {
+  const { theme, isDark, changeTheme } = useTheme();
   const { config } = useLista();
   const mode = config?.mode;
   const location = useLocation();
@@ -15,6 +18,18 @@ export default function MainLayout() {
       new window.bootstrap.Collapse(collapseEl).hide();
     }
   }, [location]);
+
+  const handleToggle = () => {
+    const newTheme =
+      theme === "system"
+        ? isDark
+          ? "light"
+          : "dark"
+        : theme === "dark"
+        ? "light"
+        : "dark";
+    changeTheme(newTheme);
+  };
 
   return (
     <div className="d-flex flex-column min-vh-100">
@@ -57,6 +72,41 @@ export default function MainLayout() {
                     Configuración
                   </NavLink>
                 </li>
+                <li className="nav-item">
+                  <button
+                    className={`btn btn-${
+                      isDark ? "light" : "dark"
+                    } d-flex align-items-center gap-2`}
+                    onClick={handleToggle}
+                    aria-label="Cambiar tema"
+                  >
+                    {theme === "system" ? (
+                      <>
+                        {isDark ? (
+                          <i className="bi bi-moon-stars-fill"></i>
+                        ) : (
+                          <i className="bi bi-sun-fill"></i>
+                        )}
+                        <span>
+                          {isDark ? "Oscuro (Sistema)" : "Claro (Sistema)"}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        {theme === "dark" ? (
+                          <i className="bi bi-moon-fill"></i>
+                        ) : (
+                          <i className="bi bi-sun-fill"></i>
+                        )}
+                        <span>
+                          {theme === "dark"
+                            ? "Oscuro (Manual)"
+                            : "Claro (Manual)"}
+                        </span>
+                      </>
+                    )}
+                  </button>
+                </li>
               </ul>
             </div>
           </div>
@@ -75,7 +125,7 @@ export default function MainLayout() {
           left: 0,
           right: 0,
           zIndex: 1030, // para estar por encima de contenido normal
-          backgroundColor: "#10101030"
+          backgroundColor: "#10101030",
         }}
       >
         <div>

@@ -1,10 +1,11 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import JsonBinProvider from "../storage/jsonBinProvider";
 import LocalStorageProvider from "../storage/localStorageProvider";
+import ApifyProvider from "../storage/apifyProvider";
 
 const ListaContext = createContext();
 
-function getStoredConfig() {
+/*function getStoredConfig() {
   const mode = localStorage.getItem("storageMode") || "local";
   const apiKey = localStorage.getItem("jsonbinApiKey") || "";
   return { mode, apiKey };
@@ -14,6 +15,23 @@ function createStorage(mode, apiKey) {
   return mode === "jsonbin"
     ? new JsonBinProvider(apiKey)
     : new LocalStorageProvider();
+}*/
+function getStoredConfig() {
+  const mode = localStorage.getItem("storageMode") || "local";
+  const jsonbinApiKey = localStorage.getItem("jsonbinApiKey") || "";
+  const apifyToken = localStorage.getItem("apifyToken") || "";
+  return { mode, jsonbinApiKey, apifyToken };
+}
+
+function createStorage(mode, jsonbinApiKey, apifyToken) {
+  switch (mode) {
+    case "jsonbin":
+      return new JsonBinProvider(jsonbinApiKey);
+    case "apify":
+      return new ApifyProvider(apifyToken);
+    default:
+      return new LocalStorageProvider();
+  }
 }
 
 export function ListaProvider({ children }) {
@@ -67,6 +85,7 @@ export function ListaProvider({ children }) {
   const getLista = (id) => listas.find((l) => l.id === id);
 
   const addItem = async (listaId, contenido) => {
+    if (contenido.trim() === "") return;
     const item = await storage.addItem(listaId, contenido);
     if (!item) return;
     setListas((prev) =>
@@ -97,6 +116,8 @@ export function ListaProvider({ children }) {
     orden = null,
     completado = null
   ) => {
+    if (contenido.trim() === "") return;
+
     const item = await storage.updateItem(
       listaId,
       itemId,
