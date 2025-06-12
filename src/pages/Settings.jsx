@@ -3,8 +3,10 @@ import { useLista } from "../context/ListaContext";
 
 export default function SettingsPage() {
   const { config, updateStorage } = useLista();
-  const [mode, setMode] = useState(config.mode);
-  const [apiKey, setApiKey] = useState(config.apiKey);
+  const [mode, setMode] = useState(config.mode || "local");
+  const [apiKey, setApiKey] = useState(config.apiKey || "");
+
+
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [showKey, setShowKey] = useState(false);
@@ -12,8 +14,8 @@ export default function SettingsPage() {
   const handleSave = () => {
     setError("");
 
-    if (mode === "jsonbin" && !apiKey.trim()) {
-      setError("Debes ingresar una API Key válida para usar JSONBin.");
+    if ((mode === "jsonbin" || mode === "apify") && !apiKey.trim()) {
+      setError("Debes ingresar una API Key válida.");
       return;
     }
 
@@ -23,45 +25,50 @@ export default function SettingsPage() {
   };
 
   useEffect(() => {
-    setMode(config.mode);
-    setApiKey(config.apiKey);
+    console.log("Configuración cargada:", config);
+    setMode(config.mode || "local");
+    setApiKey(config.apiKey || "");
   }, [config]);
+  
 
   return (
     <div className="container my-5">
       <div className="row g-4">
-        {/* Sección de Configuración */}
+        {/* Configuración */}
         <div className="col-md-6">
           <div className="card shadow-sm">
             <div className="card-body">
               <h2 className="h5 mb-3">⚙️ Configuración de almacenamiento</h2>
 
-              <div className="form-check form-switch mb-4">
-                <input
-                  className="form-check-input"
-                  type="checkbox"
-                  id="modoSwitch"
-                  checked={mode === "jsonbin"}
-                  onChange={(e) =>
-                    setMode(e.target.checked ? "jsonbin" : "local")
-                  }
-                />
-                <label className="form-check-label" htmlFor="modoSwitch">
-                  Usar JSONBin.io (si está apagado, se usa LocalStorage)
+              <div className="mb-4">
+                <label htmlFor="storageMode" className="form-label">
+                  Selecciona el proveedor:
                 </label>
+                <select
+                  className="form-select"
+                  id="storageMode"
+                  value={mode}
+                  onChange={(e) => setMode(e.target.value)}
+                >
+                  <option value="local">
+                    🗃️ LocalStorage (modo sin conexión)
+                  </option>
+                  <option value="jsonbin">☁️ JSONBin.io</option>
+                  <option value="apify">🛰️ Apify</option>
+                </select>
               </div>
 
-              {mode === "jsonbin" && (
+              {(mode === "jsonbin" || mode === "apify") && (
                 <div className="mb-4">
                   <label htmlFor="apiKey" className="form-label">
-                    Clave API (Master Key)
+                    Clave API ({mode === "jsonbin" ? "JSONBin" : "Apify"})
                   </label>
                   <div className="input-group">
                     <input
                       type={showKey ? "text" : "password"}
                       className="form-control"
                       id="apiKey"
-                      placeholder="Ej: xxxxxx-xxxxxx"
+                      placeholder="Tu clave secreta"
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
                       aria-describedby="apiHelp"
@@ -96,48 +103,74 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Sección de Ayuda */}
+        {/* Tutorial */}
         <div className="col-md-6">
           <div className="card bg-body-tertiary border-0 shadow-sm">
             <div className="card-body">
-              <h2 className="h5 mb-3">🧠 ¿Cómo conectar con JSONBin.io?</h2>
-              <ol className="small mb-0">
-                <li>
-                  Ve a{" "}
-                  <a
-                    href="https://jsonbin.io"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    jsonbin.io
-                  </a>{" "}
-                  y haz clic en <strong>Sign In</strong>.
-                </li>
-                <li>
-                  Regístrate con Google o crea una cuenta gratuita.
-                  <br />
-                  <small className="text-muted">
-                    La cuenta gratuita incluye{" "}
-                    <strong>10.000 peticiones únicas</strong>, que puedes usar
-                    sin límite de tiempo. No se renuevan mensualmente, pero
-                    puedes comprar más si las necesitas.
-                  </small>
-                </li>
-
-                <li>
-                  Ve a tu panel (Dashboard) y copia la{" "}
-                  <strong>Secret API Key</strong> (Master Key) desde{" "}
-                  <em>Settings &gt; API Key</em>.
-                </li>
-                <li>
-                  Pega esa clave en el campo de esta página y guarda la
-                  configuración.
-                </li>
-              </ol>
-              <div className="alert alert-warning mt-3 p-2 small">
-                ⚠️ Asegúrate de no compartir tu clave con nadie. Se guarda solo
-                en tu navegador.
-              </div>
+              {mode === "jsonbin" ? (
+                <>
+                  <h2 className="h5 mb-3">🧠 ¿Cómo conectar con JSONBin.io?</h2>
+                  <ol className="small mb-0">
+                    <li>
+                      Ve a{" "}
+                      <a
+                        href="https://jsonbin.io"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        jsonbin.io
+                      </a>{" "}
+                      y accede a tu cuenta.
+                    </li>
+                    <li>
+                      Desde el panel, copia tu <strong>Secret API Key</strong>.
+                    </li>
+                    <li>Pégala aquí en el campo de configuración y guarda.</li>
+                  </ol>
+                </>
+              ) : mode === "apify" ? (
+                <>
+                  <h2 className="h5 mb-3">🧠 ¿Cómo conectar con Apify?</h2>
+                  <ol className="small mb-0">
+                    <li>
+                      Ve a{" "}
+                      <a
+                        href="https://console.apify.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        console.apify.com
+                      </a>{" "}
+                      y accede a tu cuenta.
+                    </li>
+                    <li>
+                      Haz clic en tu nombre &gt;{" "}
+                      <strong>Integrations &gt; API</strong>.
+                    </li>
+                    <li>
+                      Copia tu <strong>Token de API</strong>.
+                    </li>
+                    <li>Pega el token aquí y guarda.</li>
+                    <li>¡Listo! Se creará un dataset único en tu cuenta.</li>
+                  </ol>
+                  <div className="alert alert-warning mt-3 p-2 small">
+                    ⚠️ Tu clave se almacena localmente. No la compartas.
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h2 className="h5 mb-3">
+                    ℹ️ ¿Qué es el almacenamiento local?
+                  </h2>
+                  <p className="small mb-0">
+                    Toda tu información se guarda en tu navegador. Si borras
+                    datos o cambias de dispositivo, perderás tu contenido.
+                  </p>
+                  <p className="small text-muted">
+                    Ideal para pruebas rápidas o uso sin conexión.
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>

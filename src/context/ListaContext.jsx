@@ -5,34 +5,32 @@ import ApifyProvider from "../storage/apifyProvider";
 
 const ListaContext = createContext();
 
-/*function getStoredConfig() {
-  const mode = localStorage.getItem("storageMode") || "local";
-  const apiKey = localStorage.getItem("jsonbinApiKey") || "";
-  return { mode, apiKey };
-}
-
-function createStorage(mode, apiKey) {
-  return mode === "jsonbin"
-    ? new JsonBinProvider(apiKey)
-    : new LocalStorageProvider();
-}*/
 function getStoredConfig() {
   const mode = localStorage.getItem("storageMode") || "local";
   const jsonbinApiKey = localStorage.getItem("jsonbinApiKey") || "";
   const apifyToken = localStorage.getItem("apifyToken") || "";
-  return { mode, jsonbinApiKey, apifyToken };
+
+  return {
+    mode,
+    apiKey:
+      mode === "jsonbin" ? jsonbinApiKey : mode === "apify" ? apifyToken : "",
+    jsonbinApiKey,
+    apifyToken,
+  };
 }
 
-function createStorage(mode, jsonbinApiKey, apifyToken) {
+
+function createStorage(mode, apiKey) {
   switch (mode) {
     case "jsonbin":
-      return new JsonBinProvider(jsonbinApiKey);
+      return new JsonBinProvider(apiKey);
     case "apify":
-      return new ApifyProvider(apifyToken);
+      return new ApifyProvider(apiKey);
     default:
       return new LocalStorageProvider();
   }
 }
+
 
 export function ListaProvider({ children }) {
   const [listas, setListas] = useState([]);
@@ -52,14 +50,20 @@ export function ListaProvider({ children }) {
   // Permite cambiar proveedor en caliente
   const updateStorage = (newMode, newApiKey = "") => {
     localStorage.setItem("storageMode", newMode);
+
     if (newMode === "jsonbin") {
       localStorage.setItem("jsonbinApiKey", newApiKey);
+    } else if (newMode === "apify") {
+      localStorage.setItem("apifyToken", newApiKey);
     }
 
-    const newStorage = createStorage(newMode, newApiKey);
+    const updatedConfig = getStoredConfig();
+    const newStorage = createStorage(updatedConfig.mode, updatedConfig.apiKey);
+
     setStorage(newStorage);
-    setConfig({ mode: newMode, apiKey: newApiKey });
+    setConfig(updatedConfig);
   };
+  
 
   const createLista = async (nombre) => {
     if (nombre.trim() === "") return;
