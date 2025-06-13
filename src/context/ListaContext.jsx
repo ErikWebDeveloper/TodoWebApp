@@ -64,7 +64,6 @@ export function ListaProvider({ children }) {
     setConfig(updatedConfig);
   };
   
-
   const createLista = async (nombre) => {
     if (nombre.trim() === "") return;
     const nuevaLista = await storage.create({ nombre });
