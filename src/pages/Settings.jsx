@@ -80,7 +80,9 @@ export default function SettingsPage() {
         <div className="col-md-6">
           <div className="card shadow-sm">
             <div className="card-body">
-              <h2 className="h5 mb-3">⚙️ Configuración de almacenamiento</h2>
+              <h2 className="h5 mb-3">
+                <i className="bi bi-gear-fill me-2"></i>Configuración de almacenamiento
+              </h2>
 
               <div className="mb-4">
                 <label htmlFor="storageMode" className="form-label">
@@ -95,8 +97,12 @@ export default function SettingsPage() {
                   <option value="local">
                     🗃️ LocalStorage (modo sin conexión)
                   </option>
-                  <option value="jsonbin">☁️ JSONBin.io</option>
-                  <option value="apify">🛰️ Apify</option>
+                  <option value="jsonbin">
+                    ☁️ JSONBin.io
+                  </option>
+                  <option value="apify">
+                    🛰️ Apify
+                  </option>
                 </select>
               </div>
 
@@ -120,7 +126,15 @@ export default function SettingsPage() {
                       type="button"
                       onClick={() => setShowKey((prev) => !prev)}
                     >
-                      {showKey ? "🔒 Ocultar" : "👁️ Ver"}
+                      {showKey ? (
+                        <>
+                          <i className="bi bi-eye-slash"></i> Ocultar
+                        </>
+                      ) : (
+                        <>
+                          <i className="bi bi-eye"></i> Ver
+                        </>
+                      )}
                     </button>
                   </div>
                   <div id="apiHelp" className="form-text">
@@ -138,7 +152,7 @@ export default function SettingsPage() {
 
               {saved && (
                 <div className="alert alert-success mt-3" role="alert">
-                  ✅ Configuración guardada correctamente.
+                  <i className="bi bi-check-circle-fill me-2"></i>Configuración guardada correctamente.
                 </div>
               )}
             </div>
@@ -151,7 +165,9 @@ export default function SettingsPage() {
             <div className="card-body">
               {mode === "jsonbin" ? (
                 <>
-                  <h2 className="h5 mb-3">🧠 ¿Cómo conectar con JSONBin.io?</h2>
+                  <h2 className="h5 mb-3">
+                    <i className="bi bi-lightbulb-fill me-2"></i>¿Cómo conectar con JSONBin.io?
+                  </h2>
                   <ol className="small mb-0">
                     <li>
                       Ve a{" "}
@@ -172,7 +188,9 @@ export default function SettingsPage() {
                 </>
               ) : mode === "apify" ? (
                 <>
-                  <h2 className="h5 mb-3">🧠 ¿Cómo conectar con Apify?</h2>
+                  <h2 className="h5 mb-3">
+                    <i className="bi bi-lightbulb-fill me-2"></i>¿Cómo conectar con Apify?
+                  </h2>
                   <ol className="small mb-0">
                     <li>
                       Ve a{" "}
@@ -196,13 +214,13 @@ export default function SettingsPage() {
                     <li>¡Listo! Se creará un dataset único en tu cuenta.</li>
                   </ol>
                   <div className="alert alert-warning mt-3 p-2 small">
-                    ⚠️ Tu clave se almacena localmente. No la compartas.
+                    <i className="bi bi-exclamation-triangle-fill me-2"></i>Tu clave se almacena localmente. No la compartas.
                   </div>
                 </>
               ) : (
                 <>
                   <h2 className="h5 mb-3">
-                    ℹ️ ¿Qué es el almacenamiento local?
+                    <i className="bi bi-info-circle-fill me-2"></i>¿Qué es el almacenamiento local?
                   </h2>
                   <p className="small mb-0">
                     Toda tu información se guarda en tu navegador. Si borras

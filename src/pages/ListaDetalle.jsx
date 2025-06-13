@@ -96,7 +96,7 @@ export default function ListaDetalle() {
     <div className="container pb-5">
       <div className="mb-4">
         <Link to={"/"} className="text-decoration-none fs-5">
-          ❮❮ Atras
+          <i className="bi bi-arrow-left-short"></i> Atrás
         </Link>
       </div>
       <div className="mb-4 text-center">
@@ -158,7 +158,7 @@ export default function ListaDetalle() {
               handleInsertItem(e);
             }}
           >
-            Añadir
+            <i className="bi bi-plus-lg me-1"></i>Añadir
           </button>
         </div>
       </form>
@@ -255,13 +255,13 @@ export default function ListaDetalle() {
                   className="btn btn-outline-secondary"
                   onClick={() => handleOrdenChange(item.id, "arriba")}
                 >
-                  ⬆️
+                  <i className="bi bi-arrow-up"></i>
                 </button>
                 <button
                   className="btn btn-outline-secondary"
                   onClick={() => handleOrdenChange(item.id, "abajo")}
                 >
-                  ⬇️
+                  <i className="bi bi-arrow-down"></i>
                 </button>
                 <button
                   className="btn btn-outline-danger"
@@ -269,7 +269,7 @@ export default function ListaDetalle() {
                     handleDelete(item);
                   }}
                 >
-                  🗑️
+                  <i className="bi bi-trash"></i>
                 </button>
               </div>
             </li>

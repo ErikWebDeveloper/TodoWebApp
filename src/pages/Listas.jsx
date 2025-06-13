@@ -24,7 +24,9 @@ export default function ListaHome() {
 
   return (
     <div className="container py-5">
-      <h1 className="mb-4 text-center">🗒️ Mis Listas</h1>
+      <h1 className="mb-4 text-center opacity-50">
+        <i className="bi bi-journal-text me-2"></i>Mis Listas
+      </h1>
 
       <form className="row justify-content-center mb-4">
         <div className="col-md-8">
@@ -51,7 +53,7 @@ export default function ListaHome() {
                 notifySuccess("Lista creada con éxito!")
               }}
             >
-              Crear
+              <i className="bi bi-plus-lg me-1"></i>Crear
             </button>
           </div>
         </div>
@@ -61,7 +63,7 @@ export default function ListaHome() {
         <div className="col-md-8">
           {listas.length === 0 ? (
             <div className="alert alert-info text-center">
-              No hay listas aún.
+              <i className="bi bi-info-circle me-2"></i>No hay listas aún.
             </div>
           ) : (
             <ul className="list-group">
@@ -79,7 +81,7 @@ export default function ListaHome() {
                       handleDelete(lista);
                     }}
                   >
-                    🗑️
+                    <i className="bi bi-trash"></i>
                   </button>
                 </li>
               ))}

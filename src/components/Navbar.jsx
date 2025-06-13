@@ -1,7 +1,7 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useEffect, useRef } from "react";
 import { useTheme } from "../context/ThemeContext";
-import "bootstrap-icons/font/bootstrap-icons.css";
+
 
 export default function Navbar() {
   const { theme, isDark, changeTheme } = useTheme();
@@ -27,6 +27,24 @@ export default function Navbar() {
         : "dark";
     changeTheme(newTheme);
   };
+
+  // Determina el próximo tema y su texto
+  const nextTheme =
+    theme === "system"
+      ? isDark
+        ? "light"
+        : "dark"
+      : theme === "dark"
+      ? "light"
+      : "dark";
+  const nextThemeLabel =
+    nextTheme === "dark"
+      ? "Oscuro"
+      : "Claro";
+  const nextThemeIcon =
+    nextTheme === "dark"
+      ? <i className="bi bi-moon-fill"></i>
+      : <i className="bi bi-sun-fill"></i>;
 
   return (
     <header>
@@ -60,45 +78,35 @@ export default function Navbar() {
             ref={navbarCollapseRef}
           >
             <ul className="navbar-nav ms-auto">
+              <li className="nav-item d-flex align-items-center">
+                {/* Switch de tema */}
+                <div className="form-check form-switch d-flex align-items-center mb-0 ms-2">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="themeSwitch"
+                    checked={nextTheme === "dark"}
+                    onChange={handleToggle}
+                    aria-label="Cambiar tema"
+                    style={{ cursor: "pointer" }}
+                  />
+                  <label
+                    className="form-check-label ms-2 d-flex align-items-center"
+                    htmlFor="themeSwitch"
+                    style={{ cursor: "pointer" }}
+                  >
+                    {nextThemeIcon}
+                    <span className="ms-1">{nextThemeLabel}</span>
+                    {theme === "system" && (
+                      <span className="ms-1 text-muted small">(Sistema)</span>
+                    )}
+                  </label>
+                </div>
+              </li>
               <li className="nav-item">
                 <NavLink to="/settings" className="nav-link">
                   Configuración
                 </NavLink>
-              </li>
-              <li className="nav-item">
-                <button
-                  className={`btn btn-${
-                    isDark ? "light" : "dark"
-                  } d-flex align-items-center gap-2`}
-                  onClick={handleToggle}
-                  aria-label="Cambiar tema"
-                >
-                  {theme === "system" ? (
-                    <>
-                      {isDark ? (
-                        <i className="bi bi-moon-stars-fill"></i>
-                      ) : (
-                        <i className="bi bi-sun-fill"></i>
-                      )}
-                      <span>
-                        {isDark ? "Oscuro (Sistema)" : "Claro (Sistema)"}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      {theme === "dark" ? (
-                        <i className="bi bi-moon-fill"></i>
-                      ) : (
-                        <i className="bi bi-sun-fill"></i>
-                      )}
-                      <span>
-                        {theme === "dark"
-                          ? "Oscuro (Manual)"
-                          : "Claro (Manual)"}
-                      </span>
-                    </>
-                  )}
-                </button>
               </li>
             </ul>
           </div>
