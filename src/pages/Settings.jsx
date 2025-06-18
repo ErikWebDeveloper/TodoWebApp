@@ -227,7 +227,7 @@ export default function SettingsPage() {
                     datos o cambias de dispositivo, perderás tu contenido.
                   </p>
                   <p className="small text-muted">
-                    Ideal para pruebas rápidas o uso sin conexión.
+                    Ideal para uso sin conexión.
                   </p>
                 </>
               )}

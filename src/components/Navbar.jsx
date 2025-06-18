@@ -9,12 +9,26 @@ export default function Navbar() {
   const navbarCollapseRef = useRef(null);
 
   // Cerrar el menú cuando cambia la ruta
-  useEffect(() => {
+  /*useEffect(() => {
     const collapseEl = navbarCollapseRef.current;
     if (collapseEl?.classList.contains("show")) {
       new window.bootstrap.Collapse(collapseEl).hide();
     }
+  }, [location]);*/
+
+  useEffect(() => {
+    const collapseEl = navbarCollapseRef.current;
+
+    // Verificar si existe Bootstrap antes de usarlo
+    if (
+      collapseEl?.classList.contains("show") &&
+      window.bootstrap &&
+      typeof window.bootstrap.Collapse === "function"
+    ) {
+      new window.bootstrap.Collapse(collapseEl).hide();
+    }
   }, [location]);
+  
 
   const handleToggle = () => {
     const newTheme =
@@ -77,8 +91,8 @@ export default function Navbar() {
             id="mainNavbar"
             ref={navbarCollapseRef}
           >
-            <ul className="navbar-nav ms-auto">
-              <li className="nav-item d-flex align-items-center">
+            <ul className="navbar-nav ms-auto text-center">
+              <li className="nav-item d-flex align-items-center py-2 justify-content-center">
                 {/* Switch de tema */}
                 <div className="form-check form-switch d-flex align-items-center mb-0 ms-2">
                   <input
@@ -96,7 +110,7 @@ export default function Navbar() {
                     style={{ cursor: "pointer" }}
                   >
                     {nextThemeIcon}
-                    <span className="ms-1">{nextThemeLabel}</span>
+                    <span className="ms-1">Tema {nextThemeLabel}</span>
                     {theme === "system" && (
                       <span className="ms-1 text-muted small">(Sistema)</span>
                     )}
@@ -105,7 +119,8 @@ export default function Navbar() {
               </li>
               <li className="nav-item">
                 <NavLink to="/settings" className="nav-link">
-                  Configuración
+                  <i className="bi bi-gear-fill"/>{" "}
+                  Configurar almacenamiento
                 </NavLink>
               </li>
             </ul>
